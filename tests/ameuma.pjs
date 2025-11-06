@@ -38,17 +38,17 @@ let toLocaleDateString = dateNow.toLocaleDateString()
 print( toLocaleDateString )
 
 print("--function callable test--")
-function test(){
+fn test(){
     print("function successfully called")
     return 0
 }
 
-function test2( arg ){
+fn test2( arg ){
     print( arg )
     return 0
 }
 
-function test3( a, b ){
+fn test3( a, b ){
     let math = Math.max( a, b )
     return math
 }

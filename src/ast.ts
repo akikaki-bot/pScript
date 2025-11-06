@@ -62,7 +62,7 @@ export class Parser {
         if (pk.type === TokenType.Keyword && pk.value === 'let') return this.parseLet_fixed();
         if (pk.type === TokenType.Keyword && pk.value === 'if') return this.parseIf();
         if (pk.type === TokenType.Keyword && pk.value === 'while') return this.parseWhile();
-        if (pk.type === TokenType.Keyword && pk.value === 'function') return this.parseFunctionDecl();
+        if (pk.type === TokenType.Keyword && pk.value === 'fn') return this.parseFunctionDecl();
         if (pk.type === TokenType.Op && pk.value === '{') return this.parseBlock();
         if (pk.type === TokenType.Keyword && pk.value === 'return') return this.parseReturn();
         if (pk.type === TokenType.Keyword && pk.value === 'new') return this.parseClassCreate();
@@ -135,7 +135,7 @@ export class Parser {
     }
 
     parseFunctionDecl(): StmtNode {
-        this.expectKeyword('function');
+        this.expectKeyword('fn');
         let name: string | null = null;
         const id = this.eatId();
         if (id) name = id;
@@ -291,7 +291,7 @@ export class Parser {
         if (t.type === TokenType.Op && t.value === 'function') {
             // function expression: function (a,b) { ... }
         }
-        if (t.type === TokenType.Keyword && t.value === 'function') {
+        if (t.type === TokenType.Keyword && t.value === 'fn') {
             this.pos++; this.expectOp('(');
             const params: string[] = [];
             while (!(this.peek().type === TokenType.Op && this.peek().value === ')')) {

@@ -3,7 +3,7 @@ export const KEYWORDS = new Set([
     "if", 
     "else", 
     "while", 
-    "function", 
+    "fn", 
     "return", 
     "true", 
     "false", 

@@ -14,7 +14,12 @@ class ReturnException {
  * Defines an environment (scope) for variable storage and retrieval.
  * Supports nested environments via parent references.
  * 
+ * @example
+ * const globalEnv = new Environment();
+ * globalEnv.define("x", 10);
  * 
+ * const localEnv = new Environment(globalEnv);
+ * console.log( localEnv.get("x") ); // 10
  */
 export class Environment {
 
@@ -88,7 +93,9 @@ function evalStmt(node: StmtNode, env: Environment): any {
         case 'BlockStmt': {
             const sub = new Environment(env);
             let last: any;
-            for (const s of node.body) { last = evalStmt(s, sub); }
+            for (const s of node.body) { 
+                last = evalStmt(s, sub); 
+            }
             return last;
         }
         case 'IfStmt': {
