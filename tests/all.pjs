@@ -1,7 +1,12 @@
-
+require('./src/modules/test.pjs');
 # PScript, test
+
 print("test 1: check can use Math")
 let mathTest = Math.max( 1, 2 )
+let test1 = expect( 2, mathTest );
+if( test1 ){
+    print('Test1 successfully ended');
+}
 print( mathTest )
 
 print("test 1-1: variable re-define")
@@ -10,6 +15,8 @@ let a = 1;
 print(a)
 # 再代入可能
 a = 2 #aaa
+let expectVal = 2;
+
 print(a)
 
 print("check pi")
@@ -59,4 +66,26 @@ print("test 2")
 test2( "hello world" )
 print("test 3")
 test3( 9, 0 )
+
+
+let truly = true;
+let falsy = false;
+
+if( truly isnt falsy ){
+    print('truly isn\'t falsy');
+}
+
+if( truly and truly ){
+    print('truly and truly')
+}
+
+if( truly or falsy ){
+    print( truly or falsy )
+}
+
+if( truly and falsy ){
+    print('never')
+} else {
+    print('of course truly isn\'t falsy')
+}
 

@@ -66,9 +66,22 @@ export class Parser {
         if (pk.type === TokenType.Op && pk.value === '{') return this.parseBlock();
         if (pk.type === TokenType.Keyword && pk.value === 'return') return this.parseReturn();
         if (pk.type === TokenType.Keyword && pk.value === 'new') return this.parseClassCreate();
+        if (pk.type === TokenType.Keyword && pk.value === 'require') return this.parseRequire();
         const expr = this.parseExpression();
         if (this.peek().type === TokenType.Op && this.peek().value === ';') this.pos++;
         return { type: 'ExprStmt', expr };
+    }
+
+    parseRequire(): StmtNode {
+        this.expectKeyword('require');
+        this.expectOp('(');
+        const moduleNameExpr = this.parseExpression();
+        this.expectOp(')');
+        if (this.peek().type === TokenType.Op && this.peek().value === ';') this.pos++;
+        return {
+            type: "RequireStmt",
+            requirePath: moduleNameExpr
+        }
     }
 
     parseClassCreate(): StmtNode {
@@ -187,21 +200,37 @@ export class Parser {
 
     parseLogicOr(): ExprNode {
         let node = this.parseLogicAnd();
-        while (this.peek().type === TokenType.Op && this.peek().value === '||') {
-            const op = this.next().value; const right = this.parseLogicAnd(); node = { type: 'Binary', op, left: node, right };
+        while (this.peek().type === TokenType.Op && (this.peek().value === '||' || this.peek().value === 'or')) {
+            const op = this.next().value; 
+            const right = this.parseLogicAnd(); 
+            node = { 
+                type: 'Binary', 
+                op, 
+                left: node, 
+                right 
+            };
         }
         return node;
     }
     parseLogicAnd(): ExprNode {
         let node = this.parseEquality();
-        while (this.peek().type === TokenType.Op && this.peek().value === '&&') {
+        while (this.peek().type === TokenType.Op && ( this.peek().value === '&&' || this.peek().value === 'and' )) {
             const op = this.next().value; const right = this.parseEquality(); node = { type: 'Binary', op, left: node, right };
         }
         return node;
     }
     parseEquality(): ExprNode {
         let node = this.parseComparison();
-        while (this.peek().type === TokenType.Op && (this.peek().value === '==' || this.peek().value === '!=')) {
+        while (
+            this.peek().type === TokenType.Op && 
+            (
+                this.peek().value === '==' || 
+                ( 
+                    this.peek().value === '!=' || 
+                    this.peek().value === 'isnt'
+                ) 
+            )
+        ) {
             const op = this.next().value; 
             const right = this.parseComparison(); 
             node = { 
@@ -287,9 +316,24 @@ export class Parser {
         if (t.type === TokenType.Number) { this.pos++; return { type: 'NumberLiteral', value: Number(t.value) }; }
         if (t.type === TokenType.String) { this.pos++; return { type: 'StringLiteral', value: t.value }; }
         if (t.type === TokenType.Keyword && (t.value === 'true' || t.value === 'false')) { this.pos++; return { type: 'BoolLiteral', value: t.value === 'true' }; }
-        if (t.type === TokenType.Op && t.value === '(') { this.pos++; const expr = this.parseExpression(); this.expectOp(')'); return expr; }
+        if (t.type === TokenType.Op && t.value === '(') { 
+            this.pos++; 
+            const expr = this.parseExpression(); 
+            this.expectOp(')'); 
+            return expr; 
+        }
         if (t.type === TokenType.Op && t.value === 'function') {
             // function expression: function (a,b) { ... }
+        }
+        if (t.type === TokenType.Keyword && t.value === 'require') {
+            this.pos++;
+            this.expectOp('(');
+            const moduleNameExpr = this.parseExpression();
+            this.expectOp(')');
+            return {
+                type: "RequireExpr",
+                requirePath: moduleNameExpr
+            };
         }
         if (t.type === TokenType.Keyword && t.value === 'fn') {
             this.pos++; this.expectOp('(');
@@ -320,7 +364,7 @@ export class Parser {
             this.expectOp(')');
             return { type: 'ClassCall', name: className, params: args, isConstructed: true };
         }
-        throw new TypeError('Unexpected token in primary: ',0, + JSON.stringify(t));
+        throw new TypeError('Unexpected token in primary: ', JSON.stringify(t));
     }
 }
 

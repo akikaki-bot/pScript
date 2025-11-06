@@ -7,5 +7,9 @@ export const KEYWORDS = new Set([
     "return", 
     "true", 
     "false", 
-    "new"
+    "new",
+    "thread",
+    "await",
+    "class",
+    "require"
 ]);

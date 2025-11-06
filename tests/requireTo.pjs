@@ -1,0 +1,6 @@
+require('./tests/requireFrom.pjs');
+require('./tests/fib.pjs/');
+
+hello();
+let fib100 = fib(15);
+print( fib100 )

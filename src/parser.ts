@@ -96,6 +96,42 @@ export function lex(input: string): Token[] {
             }
             i = j;
             continue;
+        }        
+        // multi-char operators
+        const four = input.slice(i, i + 4);
+        const fourOps = new Set(['isnt']);
+        if (fourOps.has(four)) {
+            tokens.push({
+                type: TokenType.Op,
+                value: four,
+                pos: i
+            });
+            i += 4;
+            continue;
+        }
+        // two-char operators
+        const two = input.slice(i, i + 2);
+        const twoOps = new Set(['==', '!=', '<=', '>=', '&&', '||', 'or' , 'is']);
+        if (twoOps.has(two)) { 
+            tokens.push({ 
+                type: TokenType.Op, 
+                value: two, 
+                pos: i 
+            }); 
+            i += 2;
+            continue; 
+        }
+        // three-char operators
+        const three = input.slice(i, i + 3);
+        const threeOps = new Set(['and']);
+        if (threeOps.has(three)) {
+            tokens.push({
+                type: TokenType.Op,
+                value: three,
+                pos: i
+            });
+            i += 3;
+            continue;
         }
         // identifiers / keywords (including dot notation)
         if (
@@ -126,18 +162,6 @@ export function lex(input: string): Token[] {
                 });
             }
             i = j; continue;
-        }
-        // two-char operators
-        const two = input.slice(i, i + 2);
-        const twoOps = new Set(['==', '!=', '<=', '>=', '&&', '||']);
-        if (twoOps.has(two)) { 
-            tokens.push({ 
-                type: TokenType.Op, 
-                value: two, 
-                pos: i 
-            }); 
-            i += 2; 
-            continue; 
         }
         // single char operators / punctuation
         const singleOps = new Set(['+', '-', '*', '/', '%', '=', '<', '>', '!', '(', ')', '{', '}', ',', ';']);

@@ -1,5 +1,9 @@
+import { readFileSync } from "fs";
 import { FunctionCantCallError, ParseError, TypeError } from "./errors";
 import { ExprNode, ProgramNode, StmtNode } from "./types/nodes";
+import { lex } from "./parser";
+import { Parser } from "./ast";
+import { ImportError } from "./errors/importError";
 
 type Value = any;
 
@@ -84,6 +88,14 @@ export function evalProgram(node: ProgramNode, env: Environment) {
 
 function evalStmt(node: StmtNode, env: Environment): any {
     switch (node.type) {
+        case 'RequireStmt': {
+            const requirePath = evalExpr(node.requirePath, env) as ProgramNode;
+            const mod = loadModule(requirePath.toString(), env);
+            mod.body.forEach(
+                stmt => evalStmt( stmt, env )
+            );
+            return;
+        }
         case 'LetStmt': {
             const v = node.init ? evalExpr(node.init, env) : undefined;
             env.define(node.id, v);
@@ -152,8 +164,26 @@ function makeFunction(name: string | null, params: string[], body: StmtNode[], e
     };
 }
 
+function loadModule(path: string, env: Environment): ProgramNode {
+    try {
+        const file = readFileSync(path, 'utf-8');
+        const tokens = lex(file);
+        const p = new Parser(tokens);
+        const prog = p.parseProgram();
+        return prog;
+    } catch (e) {
+        throw new ImportError('Error loading module at path: ' + path + ' - ' + (e as Error).message);
+    }
+}
+
 function evalExpr(node: ExprNode, env: Environment): any {
     switch (node.type) {
+        case 'RequireExpr': {
+            const requirePath = evalExpr(node.requirePath, env);
+            const mod = loadModule(requirePath, env);
+            //console.log('Loaded module from ', requirePath);
+            return mod;
+        }
         case 'NumberLiteral': return node.value;
         case 'StringLiteral': return node.value;
         case 'BoolLiteral': return node.value;
@@ -181,6 +211,9 @@ function evalExpr(node: ExprNode, env: Environment): any {
                 case '>=': return L >= R;
                 case '&&': return L && R;
                 case '||': return L || R;
+                case 'and': return L && R;
+                case 'or': return L || R;
+                case 'isnt': return L != R;
             }
             throw new ParseError('Unknown binary op ' + node.op);
         }

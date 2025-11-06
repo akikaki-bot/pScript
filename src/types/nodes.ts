@@ -13,8 +13,9 @@ export type StmtNode =
     | { type: 'WhileStmt', test: ExprNode, body: StmtNode }
     | { type: 'FunctionDecl', name: string | null, params: string[], body: StmtNode[] }
     | { type: 'ReturnStmt', arg?: ExprNode }
-    | { type: 'ClassStmt', name: string, args: ExprNode[], isConstructed: boolean };
-
+    | { type: 'ClassStmt', name: string, args: ExprNode[], isConstructed: boolean }
+    | { type: 'RequireStmt', requirePath: ExprNode }
+    
 export type ExprNode =
     | { type: 'NumberLiteral', value: number }
     | { type: 'StringLiteral', value: string }
@@ -25,4 +26,5 @@ export type ExprNode =
     | { type: 'Assign', left: ExprNode, right: ExprNode }
     | { type: 'Call', callee: ExprNode, args: ExprNode[] }
     | { type: 'FunctionExpr', params: string[], body: StmtNode[] }
+    | { type: 'RequireExpr', requirePath: ExprNode }
     | { type: 'ClassCall', name: string, params: ExprNode[], isConstructed: boolean };
