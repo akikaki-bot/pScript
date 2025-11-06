@@ -1,0 +1,53 @@
+
+print("test 1: check can use Math")
+let mathTest = Math.max( 1, 2 )
+print( mathTest )
+
+print("check pi")
+let pi = Math.PI
+print( pi )
+
+print("test 3: correct float variable")
+let floatValue = 1.14514
+print( floatValue )
+
+print("test 3-1: float + float = float")
+let floatPlus2 = floatValue + 2.1
+print( floatPlus2 )
+
+print("test 3-2: Using Math.round")
+let floatRound = Math.round( floatPlus2 )
+print( floatRound )
+
+print("test 3: check can use log")
+let variable = "aaaa"
+log("hello world", variable)
+
+print("test 4: date now -> toLocaleDateString call")
+let dateNow = Date.now()
+let toLocaleDateString = dateNow.toLocaleDateString()
+print( toLocaleDateString )
+
+print("--function callable test--")
+function test(){
+    print("function successfully called")
+    return 0
+}
+
+function test2( arg ){
+    print( arg )
+    return 0
+}
+
+function test3( a, b ){
+    let math = Math.max( a, b )
+    return math
+}
+
+print("test 1")
+test()
+print("test 2")
+test2( "hello world" )
+print("test 3")
+test3( 9, 0 )
+

@@ -1,0 +1,4 @@
+print("test 4: date now -> toLocaleDateString call")
+let dateNow = new Date()
+let toLocaleDateString = dateNow.toLocaleDateString()
+print( toLocaleDateString )
