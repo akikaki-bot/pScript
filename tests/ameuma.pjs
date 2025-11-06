@@ -1,7 +1,16 @@
 
+# PScript, test
 print("test 1: check can use Math")
 let mathTest = Math.max( 1, 2 )
 print( mathTest )
+
+print("test 1-1: variable re-define")
+# Define the variable
+let a = 1;
+print(a)
+# 再代入可能
+a = 2 #aaa
+print(a)
 
 print("check pi")
 let pi = Math.PI
@@ -24,7 +33,7 @@ let variable = "aaaa"
 log("hello world", variable)
 
 print("test 4: date now -> toLocaleDateString call")
-let dateNow = Date.now()
+let dateNow = new Date()
 let toLocaleDateString = dateNow.toLocaleDateString()
 print( toLocaleDateString )
 

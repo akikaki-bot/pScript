@@ -1,14 +1,30 @@
-import { ExprNode, ProgramNode, StmtNode } from "./ast";
+import { FunctionCantCallError, ParseError, TypeError } from "./errors";
+import { ExprNode, ProgramNode, StmtNode } from "./types/nodes";
 
 type Value = any;
 
 class ReturnException {
-    value: any; constructor(value: any) { this.value = value; }
+    value: any; 
+    constructor(value: any) { 
+        this.value = value; 
+    }
 }
 
+/**
+ * Defines an environment (scope) for variable storage and retrieval.
+ * Supports nested environments via parent references.
+ * 
+ * 
+ */
 export class Environment {
-    parent?: Environment; values: Map<string, Value> = new Map();
-    constructor(parent?: Environment) { this.parent = parent; }
+
+    public parent?: Environment; 
+    public values: Map<string, Value> = new Map();
+
+    constructor(parent?: Environment) { 
+        this.parent = parent; 
+    }
+
     get(name: string): Value {
         if (this.values.has(name)) return this.values.get(name);
         if (this.parent) return this.parent.get(name);
@@ -16,7 +32,7 @@ export class Environment {
         if( name.includes(".") ) {
             const parts = name.split(".");
             const [ parent, ...rest ] = parts;
-            if( !this.values.has(parent) ) throw new Error('Undefined namespace or variable ' + name);
+            if( !this.values.has(parent) ) throw new TypeError('Undefined namespace or variable ', name);
             let obj: any = this.get(parts[0]);
             for( let i = 1; i < parts.length; i++ ) {
                 if( obj === undefined || obj === null ) {
@@ -28,13 +44,27 @@ export class Environment {
         }
         throw new Error('Undefined variable ' + name);
     }
+
     set(name: string, value: Value) {
-        if (this.values.has(name)) { this.values.set(name, value); return; }
-        if (this.parent && this.parent.has(name)) { this.parent.set(name, value); return; }
+        if (this.values.has(name)) { 
+            this.values.set(name, value); 
+            return; 
+        }
+        if (this.parent && this.parent.has(name)) { 
+            this.parent.set(name, value); 
+            return; 
+        }
         this.values.set(name, value);
     }
-    define(name: string, value: Value) { this.values.set(name, value); }
-    has(name: string): boolean { return this.values.has(name) || (!!this.parent && this.parent.has(name)); }
+
+    define(name: string, value: Value) { 
+        this.values.set(name, value); 
+    }
+
+    has(name: string): boolean { 
+        return this.values.has(name) || 
+        (!!this.parent && this.parent.has(name)); 
+    }
 }
 
 function isTruthy(v: any) { return !!v; }
@@ -85,9 +115,8 @@ function evalStmt(node: StmtNode, env: Environment): any {
         }
         case 'ClassStmt': {
             const classConstructor = env.get(node.name);
-            console.log('[evalStmt] Constructing class:', node.name, classConstructor );
             if (typeof classConstructor !== 'function') {
-                throw new Error('Undefined class or not a constructor: ' + node.name);
+                throw new TypeError('Undefined class or not a constructor: ', node.name);
             }
 
             const args = node.args.map(arg => evalExpr(arg, env));
@@ -96,6 +125,10 @@ function evalStmt(node: StmtNode, env: Environment): any {
             return new classConstructor(...args);
         }
     }
+}
+
+function isFunction( v: any ): v is Function {
+    return typeof v === 'function';
 }
 
 function makeFunction(name: string | null, params: string[], body: StmtNode[], env: Environment) {
@@ -122,7 +155,7 @@ function evalExpr(node: ExprNode, env: Environment): any {
             const v = evalExpr(node.arg, env);
             if (node.op === '-') return -v;
             if (node.op === '!') return !v;
-            throw new Error('Unknown unary op ' + node.op);
+            throw new ParseError('Unknown unary op ' + node.op);
         }
         case 'Binary': {
             const L = evalExpr(node.left, env);
@@ -142,27 +175,42 @@ function evalExpr(node: ExprNode, env: Environment): any {
                 case '&&': return L && R;
                 case '||': return L || R;
             }
-            throw new Error('Unknown binary op ' + node.op);
+            throw new ParseError('Unknown binary op ' + node.op);
         }
         case 'Assign': {
-            if (node.left.type !== 'Identifier') throw new Error('Left-hand side of assignment must be identifier');
+            if (node.left.type !== 'Identifier') throw new ParseError('Left-hand side of assignment must be identifier');
             const val = evalExpr(node.right, env);
             let cur: Environment | undefined = env;
             while (cur) {
-                if (cur.values.has(node.left.name)) { cur.values.set(node.left.name, val); return val; }
+                if (cur.values.has(node.left.name)) { 
+                    cur.values.set(node.left.name, val); 
+                    return val; 
+                }
                 cur = cur.parent;
             }
-            console.log( val )
             env.define(node.left.name, val);
             return val;
         }
         case 'Call': {
-            console.log( env.values )
-            const callee = evalExpr(node.callee, env);
             const args = node.args.map(a => evalExpr(a, env));
-            console.log(node);
-            if (typeof callee !== 'function') throw new Error('Call of non-function');
-            return callee(...args);
+
+            if (node.callee.type === 'Identifier' && node.callee.name.includes('.')) {
+                const parts = node.callee.name.split('.');
+                let receiver: any = env.get(parts[0]);
+                for (let i = 1; i < parts.length - 1; i++) {
+                    if (receiver === undefined || receiver === null) throw new ParseError('Undefined variable ' + parts.slice(0, i + 1).join('.'));
+                    receiver = receiver[parts[i]];
+                }
+                const methodName = parts[parts.length - 1];
+                const fn = receiver ? receiver[methodName] : undefined;
+                if (!isFunction(fn)) throw new FunctionCantCallError('Call of non-function');
+                return (fn as Function).call(receiver, ...args);
+            }
+
+            // default: evaluate callee and call with no receiver
+            const callee = evalExpr(node.callee, env);
+            if (!isFunction(callee)) throw new FunctionCantCallError('Call of non-function');
+            return (callee as Function).call(null, ...args);
         }
         case 'FunctionExpr': {
             const fn = makeFunction(null, node.params, node.body, env);
@@ -170,9 +218,8 @@ function evalExpr(node: ExprNode, env: Environment): any {
         }
         case 'ClassCall': {
             const classConstructor = env.get(node.name);
-            console.log('[evalStmt] Constructing class:', node.name, classConstructor);
             if (typeof classConstructor !== 'function') {
-                throw new Error('Undefined class or not a constructor: ' + node.name);
+                throw new TypeError('Undefined class or not a constructor: ', node.name);
             }
             const args = node.params.map(arg => evalExpr(arg, env));
             return new classConstructor(...args);

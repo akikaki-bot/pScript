@@ -1,6 +1,15 @@
+# returns fact n
 function fact(n){
     if( n == 0 ) return 1;
     return n * fact( n - 1 );
 }
 
+# returns fib n
+function fib(n) {
+    if(n == 0) return 0;
+    if(n == 1) return 1;
+    else return fib(n - 1) + fib(n - 2);
+}
+
+print( fib(10) );
 print( fact(6) );

@@ -1,41 +1,19 @@
-// ----------------------------- AST -----------------------------
+import { ParseError, TypeError } from "./errors";
+import { Token, TokenType } from "./types";
+import { ExprNode, ProgramNode, StmtNode } from "./types/nodes";
 
-import { Token, TokenType } from "./parser";
-
-export type ASTNode =
-    | ProgramNode
-    | StmtNode
-    | ExprNode;
-
-export type ProgramNode = { type: 'Program', body: StmtNode[] };
-
-export type StmtNode =
-    | { type: 'LetStmt', id: string, init?: ExprNode }
-    | { type: 'ExprStmt', expr: ExprNode }
-    | { type: 'BlockStmt', body: StmtNode[] }
-    | { type: 'IfStmt', test: ExprNode, cons: StmtNode, alt?: StmtNode }
-    | { type: 'WhileStmt', test: ExprNode, body: StmtNode }
-    | { type: 'FunctionDecl', name: string | null, params: string[], body: StmtNode[] }
-    | { type: 'ReturnStmt', arg?: ExprNode }
-    | { type: 'ClassStmt', name: string, args: ExprNode[], isConstructed: boolean };
-
-export type ExprNode =
-    | { type: 'NumberLiteral', value: number }
-    | { type: 'StringLiteral', value: string }
-    | { type: 'BoolLiteral', value: boolean }
-    | { type: 'Identifier', name: string }
-    | { type: 'Binary', op: string, left: ExprNode, right: ExprNode }
-    | { type: 'Unary', op: string, arg: ExprNode }
-    | { type: 'Assign', left: ExprNode, right: ExprNode }
-    | { type: 'Call', callee: ExprNode, args: ExprNode[] }
-    | { type: 'FunctionExpr', params: string[], body: StmtNode[] }
-    | { type: 'ClassCall', name: string, params: ExprNode[], isConstructed: boolean };
-
-// ----------------------------- Parser -----------------------------
-
+/**
+ * Parser class to convert tokens into an AST
+ * @param tokens {Token[]}
+ * @returns {Parser}
+ */
 export class Parser {
-    tokens: Token[]; pos = 0;
-    constructor(tokens: Token[]) { this.tokens = tokens; }
+    public tokens: Token[]; 
+    public pos : number = 0;
+
+    constructor(tokens: Token[]) { 
+        this.tokens = tokens; 
+    }
     peek(n = 0) { 
         return this.tokens[this.pos + n] || this.tokens[this.tokens.length - 1]; 
     }
@@ -44,16 +22,31 @@ export class Parser {
     }
     eatOp(v?: string) { 
         const t = this.peek(); 
-        if (t.type === TokenType.Op && (!v || t.value === v)) { this.pos++; return t; } return null; }
+        if (t.type === TokenType.Op && (!v || t.value === v)) { 
+            this.pos++; 
+            return t; 
+        } 
+        return null; 
+    }
     eatKeyword(v?: string) { 
         const t = this.peek(); 
-        if (t.type === TokenType.Keyword && (!v || t.value === v)) { this.pos++; return t; } return null; }
+        if (t.type === TokenType.Keyword && (!v || t.value === v)) { 
+            this.pos++; 
+            return t; 
+        } 
+        return null; 
+    }
     eatId() { 
         const t = this.peek(); 
-        if (t.type === TokenType.Identifier) { this.pos++; return t.value; } return null; }
+        if (t.type === TokenType.Identifier) { 
+            this.pos++; 
+            return t.value; 
+        } 
+        return null; 
+    }
     expectOp(v: string) { 
         const t = this.next(); 
-        if (t.type !== TokenType.Op || t.value !== v) throw new Error('Expected op ' + v + ' got ' + JSON.stringify(t)); 
+        if (t.type !== TokenType.Op || t.value !== v) throw new ParseError('Expected op ' + v + ' got ' + JSON.stringify(t)); 
     }
 
     parseProgram(): ProgramNode {
@@ -73,9 +66,7 @@ export class Parser {
         if (pk.type === TokenType.Op && pk.value === '{') return this.parseBlock();
         if (pk.type === TokenType.Keyword && pk.value === 'return') return this.parseReturn();
         if (pk.type === TokenType.Keyword && pk.value === 'new') return this.parseClassCreate();
-        // expression statement
         const expr = this.parseExpression();
-        // optional semicolon
         if (this.peek().type === TokenType.Op && this.peek().value === ';') this.pos++;
         return { type: 'ExprStmt', expr };
     }
@@ -83,7 +74,7 @@ export class Parser {
     parseClassCreate(): StmtNode {
         this.expectKeyword('new');
         const className = this.eatId();
-        if (!className) throw new Error('Expected class name after new');
+        if (!className) throw new ParseError('Expected class name after new');
         this.expectOp('(');
         const args: ExprNode[] = [];
         while (this.peek().type !== TokenType.Op || this.peek().value !== ')') {
@@ -106,9 +97,13 @@ export class Parser {
 
     parseLet_fixed(): StmtNode {
         this.expectKeyword('let');
-        const id = this.eatId(); if (!id) throw new Error('Expected identifier after let');
+        const id = this.eatId(); 
+        if (!id) throw new ParseError('Expected identifier after let');
         let init: ExprNode | undefined = undefined;
-        if (this.peek().type === TokenType.Op && this.peek().value === '=') { this.pos++; init = this.parseExpression(); }
+        if (this.peek().type === TokenType.Op && this.peek().value === '=') { 
+            this.pos++; 
+            init = this.parseExpression();
+        }
         if (this.peek().type === TokenType.Op && this.peek().value === ';') this.pos++;
         return { type: 'LetStmt', id, init };
     }
@@ -120,7 +115,13 @@ export class Parser {
         this.expectOp(')');
         const cons = this.parseStatement();
         let alt: StmtNode | undefined;
-        if (this.peek().type === TokenType.Keyword && this.peek().value === 'else') { this.pos++; alt = this.parseStatement(); }
+        if (
+            this.peek().type === TokenType.Keyword && 
+            this.peek().value === 'else'
+        ) { 
+            this.pos++; 
+            alt = this.parseStatement(); 
+        }
         return { type: 'IfStmt', test, cons, alt };
     }
 
@@ -141,7 +142,7 @@ export class Parser {
         this.expectOp('(');
         const params: string[] = [];
         while (this.peek().type !== TokenType.Op || this.peek().value !== ')') {
-            const p = this.eatId(); if (!p) throw new Error('Expected param name'); params.push(p);
+            const p = this.eatId(); if (!p) throw new ParseError('Expected param name'); params.push(p);
             if (this.peek().type === TokenType.Op && this.peek().value === ',') this.pos++;
             else break;
         }
@@ -154,7 +155,7 @@ export class Parser {
         this.expectOp('{');
         const body: StmtNode[] = [];
         while (!(this.peek().type === TokenType.Op && this.peek().value === '}')) {
-            if (this.peek().type === TokenType.EOF) throw new Error('Unterminated block');
+            if (this.peek().type === TokenType.EOF) throw new ParseError('Unterminated block');
             body.push(this.parseStatement());
         }
         this.expectOp('}');
@@ -201,34 +202,66 @@ export class Parser {
     parseEquality(): ExprNode {
         let node = this.parseComparison();
         while (this.peek().type === TokenType.Op && (this.peek().value === '==' || this.peek().value === '!=')) {
-            const op = this.next().value; const right = this.parseComparison(); node = { type: 'Binary', op, left: node, right };
+            const op = this.next().value; 
+            const right = this.parseComparison(); 
+            node = { 
+                type: 'Binary', 
+                op, 
+                left: node, 
+                right 
+            };
         }
         return node;
     }
     parseComparison(): ExprNode {
         let node = this.parseTerm();
         while (this.peek().type === TokenType.Op && ['<', '>', '<=', '>='].includes(this.peek().value)) {
-            const op = this.next().value; const right = this.parseTerm(); node = { type: 'Binary', op, left: node, right };
+            const op = this.next().value; 
+            const right = this.parseTerm(); 
+            node = { 
+                type: 'Binary', 
+                op, 
+                left: node, 
+                right 
+            };
         }
         return node;
     }
     parseTerm(): ExprNode {
         let node = this.parseFactor();
         while (this.peek().type === TokenType.Op && (this.peek().value === '+' || this.peek().value === '-')) {
-            const op = this.next().value; const right = this.parseFactor(); node = { type: 'Binary', op, left: node, right };
+            const op = this.next().value; 
+            const right = this.parseFactor(); 
+            node = { 
+                type: 'Binary', 
+                op, 
+                left: node, 
+                right 
+            };
         }
         return node;
     }
     parseFactor(): ExprNode {
         let node = this.parseUnary();
         while (this.peek().type === TokenType.Op && (this.peek().value === '*' || this.peek().value === '/' || this.peek().value === '%')) {
-            const op = this.next().value; const right = this.parseUnary(); node = { type: 'Binary', op, left: node, right };
+            const op = this.next().value; 
+            const right = this.parseUnary(); 
+            node = { 
+                type: 'Binary', 
+                op, 
+                left: node, 
+                right 
+            };
         }
         return node;
     }
     parseUnary(): ExprNode {
         if (this.peek().type === TokenType.Op && (this.peek().value === '-' || this.peek().value === '!')) {
-            const op = this.next().value; const arg = this.parseUnary(); return { type: 'Unary', op, arg };
+            const op = this.next().value; 
+            const arg = this.parseUnary();
+            return {
+                type: 'Unary', op, arg
+            };
         }
         return this.parseCall();
     }
@@ -262,7 +295,9 @@ export class Parser {
             this.pos++; this.expectOp('(');
             const params: string[] = [];
             while (!(this.peek().type === TokenType.Op && this.peek().value === ')')) {
-                const p = this.eatId(); if (!p) throw new Error('Expected param'); params.push(p);
+                const p = this.eatId(); 
+                if (!p) throw new ParseError('Expected param'); 
+                params.push(p);
                 if (this.peek().type === TokenType.Op && this.peek().value === ',') this.pos++; else break;
             }
             this.expectOp(')');
@@ -273,7 +308,7 @@ export class Parser {
         if( t.type === TokenType.Keyword && t.value === 'new') {
             this.pos++;
             const className = this.eatId();
-            if (!className) throw new Error('Expected class name after new');
+            if (!className) throw new ParseError('Expected class name after new');
             this.expectOp('(');
             const args: ExprNode[] = [];
             while (this.peek().type !== TokenType.Op || this.peek().value !== ')') {
@@ -285,7 +320,7 @@ export class Parser {
             this.expectOp(')');
             return { type: 'ClassCall', name: className, params: args, isConstructed: true };
         }
-        throw new Error('Unexpected token in primary: ' + JSON.stringify(t));
+        throw new TypeError('Unexpected token in primary: ',0, + JSON.stringify(t));
     }
 }
 

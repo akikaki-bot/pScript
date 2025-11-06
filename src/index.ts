@@ -20,9 +20,11 @@ import { lex } from "./parser";
 
 
 
-// ----------------------------- Runner / Builtins -----------------------------
-
-function createGlobalEnv(): Environment {
+/**
+ * Creates a global environment with built-in functions and objects.
+ * @returns {Environment} The global environment.
+ */
+export function createGlobalEnv(): Environment {
     const env = new Environment();
     env.define('Math', (function () { return Math; })());
     env.define('fetch', ( function () { return fetch; })() );
@@ -33,50 +35,16 @@ function createGlobalEnv(): Environment {
     return env;
 }
 
-function run(src: string, env?: Environment) {
+/**
+ * Compile and run the given source code in the provided environment.
+ * @param src {string} The source code to run.
+ * @param env {Environment} The environment to run the code in.
+ * @returns {any} The result of the program execution.
+ */
+export function run(src: string, env?: Environment) {
     const tokens = lex(src);
     const p = new Parser(tokens);
     const prog = p.parseProgram();
     return evalProgram(prog, env || createGlobalEnv());
 }
 
-// ----------------------------- Example programs -----------------------------
-
-const example1 = `
-let x = 10;
-let y = 20;
-print("sum:", x + y);
-`;
-
-const example2 = `
-function fact(n) {
-  if (n == 0) { return 1; }
-  return n * fact(n - 1);
-}
-print(fact(6));
-`;
-
-const example3 = `
-let a = 0;
-while (a < 5) {
-  print(a);
-  a = a + 1;
-}
-`;
-
-const example4 = `
-let add = function(a,b) { return a + b; };
-print(add(3,4));
-`;
-
-// Run examples when executed directly
-if (require.main === module) {
-    const env = createGlobalEnv();
-    console.log('--- example1 ---'); run(example1, env);
-    console.log('--- example2 ---'); run(example2, env);
-    console.log('--- example3 ---'); run(example3, env);
-    console.log('--- example4 ---'); run(example4, env);
-}
-
-// Export for embedding
-export { run, createGlobalEnv };
