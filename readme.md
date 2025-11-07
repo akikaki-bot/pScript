@@ -1,5 +1,7 @@
 # PScript
-tiny, javaScript like Programming Language
+tiny, Python and JavaScript like Programming Language
+
+ちいさくて、PythonとJavaScriptみたいなプログラミング言語。
 
 ```
 let hello = "hello"; # comments out
@@ -15,5 +17,25 @@ fn fib(n) {
     else return fib(n - 1) + fib(n - 2);
 }
 fib(10);
+
+# Array declaration
+let array = [ 0, "hi there", 2 ]
+print( array[1] );
+if( arr[0] == 0 ){
+    print('arr[0] is zero');
+}
+array[0] = 1;
+print(array[0], " plus ", array[2], " is ", array[0] + array[2] );
 ```
 
+## If statements keywords
+```
+if( a != b ) {}
+if( a isnt b ){}
+
+if( a == b ){}
+if( a and b ){}
+
+if( a || b ){}
+if( a or b ){}
+```

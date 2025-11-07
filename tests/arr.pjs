@@ -1,4 +1,19 @@
 let arr = [ 0, 9 ] # gahaha
 print( arr[0] )
+if( arr[0] isnt 1 ){
+    print('1 zyaani')
+} 
 arr[0] = 1
+if( arr[0] == 1 ){
+    print('1 ninatta')
+}
 print( arr[0])
+
+let array = [ 0, "hi there", 2 ]
+print( array[1] );
+if( arr[0] == 0 ){
+    print('arr[0] is zero');
+}
+
+array[0] = 1;
+print(array[0], " plus ", array[2], " is ", array[0] + array[2] );
