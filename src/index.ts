@@ -54,6 +54,7 @@ export function createGlobalEnv(): Environment {
  */
 export function run(src: string, env?: Environment) {
 	const tokens = lex(src);
+	console.log('Tokens:', tokens);
 	const p = new Parser(tokens);
 	const prog = p.parseProgram();
 	return evalProgram(prog, env || createGlobalEnv());

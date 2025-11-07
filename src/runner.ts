@@ -110,6 +110,10 @@ function evalStmt(node: StmtNode, env: Environment): any {
             }
             return last;
         }
+        case 'ArrayStmt': {
+            const elements = node.elements.map( el => evalExpr(el, env) );
+            return elements;
+        }
         case 'IfStmt': {
             const t = evalExpr(node.test, env);
             if (isTruthy(t)) return evalStmt(node.cons, env);
@@ -188,6 +192,10 @@ function evalExpr(node: ExprNode, env: Environment): any {
         case 'StringLiteral': return node.value;
         case 'BoolLiteral': return node.value;
         case 'Identifier': return env.get(node.name);
+        case 'ArrayExpr': {
+            const elements = node.elements.map( el => evalExpr(el, env) );
+            return elements;
+        }
         case 'Unary': {
             const v = evalExpr(node.arg, env);
             if (node.op === '-') return -v;

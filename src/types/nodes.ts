@@ -15,6 +15,7 @@ export type StmtNode =
     | { type: 'ReturnStmt', arg?: ExprNode }
     | { type: 'ClassStmt', name: string, args: ExprNode[], isConstructed: boolean }
     | { type: 'RequireStmt', requirePath: ExprNode }
+    | { type: 'ArrayStmt', elements: ExprNode[] }
     
 export type ExprNode =
     | { type: 'NumberLiteral', value: number }
@@ -27,4 +28,5 @@ export type ExprNode =
     | { type: 'Call', callee: ExprNode, args: ExprNode[] }
     | { type: 'FunctionExpr', params: string[], body: StmtNode[] }
     | { type: 'RequireExpr', requirePath: ExprNode }
-    | { type: 'ClassCall', name: string, params: ExprNode[], isConstructed: boolean };
+    | { type: 'ClassCall', name: string, params: ExprNode[], isConstructed: boolean }
+    | { type: 'ArrayExpr', elements: ExprNode[] };

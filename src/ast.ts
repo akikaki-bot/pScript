@@ -18,7 +18,7 @@ export class Parser {
         return this.tokens[this.pos + n] || this.tokens[this.tokens.length - 1]; 
     }
     next() { 
-        return this.tokens[this.pos++] || this.tokens[this.tokens.length - 1]; 7
+        return this.tokens[this.pos++] || this.tokens[this.tokens.length - 1];
     }
     eatOp(v?: string) { 
         const t = this.peek(); 
@@ -65,6 +65,7 @@ export class Parser {
         if (pk.type === TokenType.Keyword && pk.value === 'fn') return this.parseFunctionDecl();
         if (pk.type === TokenType.Op && pk.value === '{') return this.parseBlock();
         if (pk.type === TokenType.Keyword && pk.value === 'return') return this.parseReturn();
+        if (pk.type === TokenType.Array && pk.value === '[') return this.parseArray();
         if (pk.type === TokenType.Keyword && pk.value === 'new') return this.parseClassCreate();
         if (pk.type === TokenType.Keyword && pk.value === 'require') return this.parseRequire();
         const expr = this.parseExpression();
@@ -105,8 +106,27 @@ export class Parser {
         }
     }
 
+    parseArray(): StmtNode {
+        this.expectOp('[');
+        const elements: ExprNode[] = [];
+        while (this.peek().type !== TokenType.Op || this.peek().value !== ']') {
+            const element = this.parseExpression();
+            elements.push(element);
+            if (this.peek().type === TokenType.Op && this.peek().value === ',') this.pos++;
+            else break;
+        }
+        this.expectOp(']');
+        return {
+            type: "ArrayStmt",
+            elements: elements
+        };
+    }
+
     // Adjust expect for keywords
-    expectKeyword(v: string) { const t = this.next(); if (t.type !== TokenType.Keyword || t.value !== v) throw new Error('Expected keyword ' + v + ' got ' + JSON.stringify(t)); }
+    expectKeyword(v: string) { 
+        const t = this.next(); 
+        if (t.type !== TokenType.Keyword || t.value !== v) throw new Error('Expected keyword ' + v + ' got ' + JSON.stringify(t)); 
+    }
 
     parseLet_fixed(): StmtNode {
         this.expectKeyword('let');
@@ -215,7 +235,14 @@ export class Parser {
     parseLogicAnd(): ExprNode {
         let node = this.parseEquality();
         while (this.peek().type === TokenType.Op && ( this.peek().value === '&&' || this.peek().value === 'and' )) {
-            const op = this.next().value; const right = this.parseEquality(); node = { type: 'Binary', op, left: node, right };
+            const op = this.next().value; 
+            const right = this.parseEquality(); 
+            node = { 
+                type: 'Binary', 
+                op, 
+                left: node, 
+                right 
+            };
         }
         return node;
     }
@@ -296,6 +323,7 @@ export class Parser {
     }
     parseCall(): ExprNode {
         let node = this.parsePrimary();
+        console.log('Call parsing, current node:', node);
         while (true) {
             if (this.peek().type === TokenType.Op && this.peek().value === '(') {
                 this.pos++; const args: ExprNode[] = [];
@@ -313,6 +341,7 @@ export class Parser {
     }
     parsePrimary(): ExprNode {
         const t = this.peek();
+        console.log('Primary token:', t);
         if (t.type === TokenType.Number) { this.pos++; return { type: 'NumberLiteral', value: Number(t.value) }; }
         if (t.type === TokenType.String) { this.pos++; return { type: 'StringLiteral', value: t.value }; }
         if (t.type === TokenType.Keyword && (t.value === 'true' || t.value === 'false')) { this.pos++; return { type: 'BoolLiteral', value: t.value === 'true' }; }
@@ -321,6 +350,21 @@ export class Parser {
             const expr = this.parseExpression(); 
             this.expectOp(')'); 
             return expr; 
+        }
+        if (t.type === TokenType.Array) {
+            this.pos++;
+            const elements: ExprNode[] = [];
+            while( this.peek(this.pos).type === TokenType.Array && this.peek(this.pos).value !== ']' ) {
+                const element = this.parseExpression();
+                elements.push(element);
+                if (this.peek().type === TokenType.Op && this.peek().value === ',') this.pos++;
+                else break;
+            }
+            //this.expectOp(']');
+            return {
+                type: "ArrayExpr",
+                elements: elements
+            };
         }
         if (t.type === TokenType.Op && t.value === 'function') {
             // function expression: function (a,b) { ... }
@@ -348,7 +392,10 @@ export class Parser {
             const body = (this.parseBlock() as any).body;
             return { type: 'FunctionExpr', params, body };
         }
-        if (t.type === TokenType.Identifier) { this.pos++; return { type: 'Identifier', name: t.value }; }
+        if (t.type === TokenType.Identifier) { 
+            this.pos++; 
+            return { type: 'Identifier', name: t.value }; 
+        }
         if( t.type === TokenType.Keyword && t.value === 'new') {
             this.pos++;
             const className = this.eatId();

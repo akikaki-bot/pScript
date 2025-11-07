@@ -6,6 +6,7 @@ export enum TokenType {
     Punct = "Punct",
     Op = "Op",
     EOF = "EOF",
+    Array = "Array",
 }
 
 export type Token = {
