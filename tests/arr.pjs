@@ -1,1 +1,4 @@
-let arr = [ 0, 9 ] # print( arr )
+let arr = [ 0, 9 ] # gahaha
+print( arr[0] )
+arr[0] = 1
+print( arr[0])

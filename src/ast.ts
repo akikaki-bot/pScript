@@ -65,7 +65,7 @@ export class Parser {
         if (pk.type === TokenType.Keyword && pk.value === 'fn') return this.parseFunctionDecl();
         if (pk.type === TokenType.Op && pk.value === '{') return this.parseBlock();
         if (pk.type === TokenType.Keyword && pk.value === 'return') return this.parseReturn();
-        if (pk.type === TokenType.Array && pk.value === '[') return this.parseArray();
+        if (pk.type === TokenType.Op && pk.value === '[') return this.parseArray();
         if (pk.type === TokenType.Keyword && pk.value === 'new') return this.parseClassCreate();
         if (pk.type === TokenType.Keyword && pk.value === 'require') return this.parseRequire();
         const expr = this.parseExpression();
@@ -323,7 +323,6 @@ export class Parser {
     }
     parseCall(): ExprNode {
         let node = this.parsePrimary();
-        console.log('Call parsing, current node:', node);
         while (true) {
             if (this.peek().type === TokenType.Op && this.peek().value === '(') {
                 this.pos++; const args: ExprNode[] = [];
@@ -341,7 +340,6 @@ export class Parser {
     }
     parsePrimary(): ExprNode {
         const t = this.peek();
-        console.log('Primary token:', t);
         if (t.type === TokenType.Number) { this.pos++; return { type: 'NumberLiteral', value: Number(t.value) }; }
         if (t.type === TokenType.String) { this.pos++; return { type: 'StringLiteral', value: t.value }; }
         if (t.type === TokenType.Keyword && (t.value === 'true' || t.value === 'false')) { this.pos++; return { type: 'BoolLiteral', value: t.value === 'true' }; }
@@ -351,20 +349,20 @@ export class Parser {
             this.expectOp(')'); 
             return expr; 
         }
-        if (t.type === TokenType.Array) {
+        if (t.type === TokenType.Op && t.value === '[') {
             this.pos++;
             const elements: ExprNode[] = [];
-            while( this.peek(this.pos).type === TokenType.Array && this.peek(this.pos).value !== ']' ) {
+            while( !(this.peek().type === TokenType.Op && this.peek().value === ']') ) {
                 const element = this.parseExpression();
                 elements.push(element);
                 if (this.peek().type === TokenType.Op && this.peek().value === ',') this.pos++;
                 else break;
             }
-            //this.expectOp(']');
+            this.expectOp(']');
             return {
                 type: "ArrayExpr",
                 elements: elements
-            };
+            }
         }
         if (t.type === TokenType.Op && t.value === 'function') {
             // function expression: function (a,b) { ... }
@@ -380,13 +378,15 @@ export class Parser {
             };
         }
         if (t.type === TokenType.Keyword && t.value === 'fn') {
-            this.pos++; this.expectOp('(');
+            this.pos++; 
+            this.expectOp('(');
             const params: string[] = [];
             while (!(this.peek().type === TokenType.Op && this.peek().value === ')')) {
                 const p = this.eatId(); 
                 if (!p) throw new ParseError('Expected param'); 
                 params.push(p);
-                if (this.peek().type === TokenType.Op && this.peek().value === ',') this.pos++; else break;
+                if (this.peek().type === TokenType.Op && this.peek().value === ',') this.pos++; 
+                else break;
             }
             this.expectOp(')');
             const body = (this.parseBlock() as any).body;

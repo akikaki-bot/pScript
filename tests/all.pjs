@@ -37,7 +37,7 @@ print( floatRound )
 
 print("test 3: check can use log")
 let variable = "aaaa"
-log("hello world", variable)
+print("hello world", variable)
 
 print("test 4: date now -> toLocaleDateString call")
 let dateNow = new Date()

@@ -51,6 +51,22 @@ export class Environment {
             }
             return obj;
         }
+
+        if( name.includes("[") ) {
+            const varName = name.substring(0, name.indexOf("["));
+            const indexPart = name.substring(name.indexOf("["));
+            let arr = this.get(varName);
+            const indexMatches = indexPart.match(/\[(.*?)\]/g);
+            if( !indexMatches ) throw new Error('Invalid array access syntax in ' + name);
+            for( const match of indexMatches ) {
+                const indexStr = match.substring(1, match.length - 1).trim();
+                const index = Number(indexStr);
+                if( arr.length < index + 1 ) throw new Error('Out of index access ' + index + ' in ' + name);
+                if( isNaN(index) ) throw new Error('Invalid array index ' + indexStr + ' in ' + name);
+                arr = arr[index];
+            }
+            return arr;
+        }
         throw new Error('Undefined variable ' + name);
     }
 
