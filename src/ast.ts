@@ -68,9 +68,23 @@ export class Parser {
         if (pk.type === TokenType.Op && pk.value === '[') return this.parseArray();
         if (pk.type === TokenType.Keyword && pk.value === 'new') return this.parseClassCreate();
         if (pk.type === TokenType.Keyword && pk.value === 'require') return this.parseRequire();
+        if (pk.type === TokenType.Keyword && pk.value === 'break') return this.parseBreak();
+        if (pk.type === TokenType.Keyword && pk.value === 'continue') return this.parseContinue();
         const expr = this.parseExpression();
         if (this.peek().type === TokenType.Op && this.peek().value === ';') this.pos++;
         return { type: 'ExprStmt', expr };
+    }
+
+    parseBreak(): StmtNode {
+        this.expectKeyword('break');
+        if (this.peek().type === TokenType.Op && this.peek().value === ';') this.pos++;
+        return { type: "BreakStmt" };
+    }
+
+    parseContinue(): StmtNode {
+        this.expectKeyword('continue');
+        if (this.peek().type === TokenType.Op && this.peek().value === ';') this.pos++;
+        return { type: "ContinueStmt" };
     }
 
     parseRequire(): StmtNode {
@@ -340,9 +354,20 @@ export class Parser {
     }
     parsePrimary(): ExprNode {
         const t = this.peek();
-        if (t.type === TokenType.Number) { this.pos++; return { type: 'NumberLiteral', value: Number(t.value) }; }
-        if (t.type === TokenType.String) { this.pos++; return { type: 'StringLiteral', value: t.value }; }
-        if (t.type === TokenType.Keyword && (t.value === 'true' || t.value === 'false')) { this.pos++; return { type: 'BoolLiteral', value: t.value === 'true' }; }
+        if (t.type === TokenType.Number) { 
+            this.pos++; 
+            return { type: 'NumberLiteral', value: Number(t.value) }; 
+        }
+        if (t.type === TokenType.String) { 
+            this.pos++; 
+            return { type: 'StringLiteral', value: t.value }; }
+        if (t.type === TokenType.Keyword && (t.value === 'true' || t.value === 'false')) { 
+            this.pos++; 
+            return { 
+                type: 'BoolLiteral', 
+                value: t.value === 'true' 
+            }; 
+        }
         if (t.type === TokenType.Op && t.value === '(') { 
             this.pos++; 
             const expr = this.parseExpression(); 

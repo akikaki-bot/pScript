@@ -4,15 +4,11 @@ import { ExprNode, ProgramNode, StmtNode } from "./types/nodes";
 import { lex } from "./parser";
 import { Parser } from "./ast";
 import { ImportError } from "./errors/importError";
+import { ReturnException } from "./types/ReturnException";
+import { BreakException } from "./types/BreakException";
+import { ContinueException } from "./types/ContinueException";
 
 type Value = any;
-
-class ReturnException {
-    value: any; 
-    constructor(value: any) { 
-        this.value = value; 
-    }
-}
 
 /**
  * Defines an environment (scope) for variable storage and retrieval.
@@ -139,7 +135,8 @@ function evalStmt(node: StmtNode, env: Environment): any {
         case 'WhileStmt': {
             while (isTruthy(evalExpr(node.test, env))) {
                 const res = evalStmt(node.body, env);
-                // allow break/return via exceptions (not implemented break here)
+                if (res instanceof BreakException) break;
+                if (res instanceof ContinueException) continue;
             }
             return undefined;
         }
@@ -162,6 +159,12 @@ function evalStmt(node: StmtNode, env: Environment): any {
             if (node.name && !node.isConstructed) env.define(node.name, new classConstructor(...args));
             node.isConstructed = true;
             return new classConstructor(...args);
+        }
+        case 'BreakStmt': {
+            return new BreakException();
+        }
+        case 'ContinueStmt': {
+            return new ContinueException();
         }
     }
 }

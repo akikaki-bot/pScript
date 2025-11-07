@@ -11,5 +11,7 @@ export const KEYWORDS = new Set([
     "thread",
     "await",
     "class",
-    "require"
+    "require",
+    "break",
+    "continue"
 ]);

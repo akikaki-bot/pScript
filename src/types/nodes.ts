@@ -16,6 +16,8 @@ export type StmtNode =
     | { type: 'ClassStmt', name: string, args: ExprNode[], isConstructed: boolean }
     | { type: 'RequireStmt', requirePath: ExprNode }
     | { type: 'ArrayStmt', elements: ExprNode[] }
+    | { type: 'BreakStmt' }
+    | { type: 'ContinueStmt' }
     
 export type ExprNode =
     | { type: 'NumberLiteral', value: number }
