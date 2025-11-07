@@ -26,6 +26,16 @@ if( arr[0] == 0 ){
 }
 array[0] = 1;
 print(array[0], " plus ", array[2], " is ", array[0] + array[2] );
+
+# while statements ( ex: fizzbuzz )
+let i = 0;
+while( i < 100 ){
+    i = i + 1;
+    if( i % 15 == 0 ) print('fizz buzz')
+    else if( i % 5 == 0 ) print('fizz')
+    else if( i % 5 == 0 ) print('buzz')
+    else print(i)
+}
 ```
 
 ## If statements keywords
