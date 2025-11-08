@@ -9,29 +9,11 @@ import { Thread } from "./internals";
  */
 export function createGlobalEnv(): Environment {
 	const env = new Environment();
-	env.define('Math', (
-		function () {
-			return Math;
-		}
-	)());
-	env.define('Thread', (() => {
-		return Thread;
-	})());
-	env.define('fetch', (
-		function () { 
-			return fetch; 
-		}
-	)());
-	env.define('Date', (
-		function () { 
-			return Date; 
-		}
-	)());
-	env.define('JSON', (
-		function () { 
-			return JSON; 
-		}
-	)());
+	env.define('Math', Math);
+	env.define('Thread', Thread);
+	//env.define('fetch', fetch);
+	env.define('Date', Date);
+	env.define('JSON', JSON);
 	env.define('print', 
 		(...args: any[]) => { 
 			console.log(...args); 
