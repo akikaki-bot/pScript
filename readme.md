@@ -3,6 +3,10 @@ tiny, Python and JavaScript like Programming Language
 
 ちいさくて、PythonとJavaScriptみたいなプログラミング言語。
 
+# 設計思想
+いいとこどり。
+書きやすいところはそのまま輸入します。(気分次第)
+
 ```
 let hello = "hello"; # comments out
 let world = "world";
@@ -26,6 +30,7 @@ if( arr[0] == 0 ){
 }
 array[0] = 1;
 print(array[0], " plus ", array[2], " is ", array[0] + array[2] );
+print( len(array) ); # 3
 
 # while statements ( ex: fizzbuzz )
 let i = 0;
@@ -63,7 +68,7 @@ while( j < 1000 ){
 if( a != b ) {}
 if( a isnt b ){}
 
-if( a == b ){}
+if( a && b ){}
 if( a and b ){}
 
 if( a || b ){}

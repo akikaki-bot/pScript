@@ -1,12 +1,16 @@
 import { readFileSync } from "fs";
 import { FunctionCantCallError, ParseError, TypeError } from "./errors";
-import { ExprNode, ProgramNode, StmtNode } from "./types/nodes";
 import { lex } from "./parser";
 import { Parser } from "./ast";
 import { ImportError } from "./errors/importError";
-import { ReturnException } from "./types/ReturnException";
-import { BreakException } from "./types/BreakException";
-import { ContinueException } from "./types/ContinueException";
+import { 
+    ReturnException, 
+    BreakException, 
+    ContinueException, 
+    ExprNode, 
+    ProgramNode, 
+    StmtNode 
+} from "./types";
 
 type Value = any;
 
@@ -56,7 +60,16 @@ export class Environment {
             if( !indexMatches ) throw new Error('Invalid array access syntax in ' + name);
             for( const match of indexMatches ) {
                 const indexStr = match.substring(1, match.length - 1).trim();
-                const index = Number(indexStr);
+                let index = Number(indexStr);
+                if( 
+                    isNaN( index ) && 
+                    !(indexStr.startsWith('"') && indexStr.endsWith('"')) && 
+                    !(indexStr.startsWith("'") && indexStr.endsWith("'")) 
+                ) {
+                    index = this.get( indexStr );
+                } else {
+                    throw new TypeError('Invalid array index type in ' + name);
+                }
                 if( arr.length < index + 1 ) throw new Error('Out of index access ' + index + ' in ' + name);
                 if( isNaN(index) ) throw new Error('Invalid array index ' + indexStr + ' in ' + name);
                 arr = arr[index];
@@ -159,6 +172,14 @@ function evalStmt(node: StmtNode, env: Environment): any {
         case 'ContinueStmt': {
             throw new ContinueException();
         }
+        case 'LenStmt': {
+            const target = evalExpr(node.target, env);
+            if (typeof target === 'string' || Array.isArray(target)) {
+                return target.length;
+            } else {
+                throw new TypeError('len() argument must be a string or array');
+            }
+        }
         case 'ClassStmt': {
             const classConstructor = env.get(node.name);
             if (typeof classConstructor !== 'function') {
@@ -208,7 +229,6 @@ function evalExpr(node: ExprNode, env: Environment): any {
         case 'RequireExpr': {
             const requirePath = evalExpr(node.requirePath, env);
             const mod = loadModule(requirePath, env);
-            //console.log('Loaded module from ', requirePath);
             return mod;
         }
         case 'NumberLiteral': return node.value;
@@ -218,6 +238,14 @@ function evalExpr(node: ExprNode, env: Environment): any {
         case 'ArrayExpr': {
             const elements = node.elements.map( el => evalExpr(el, env) );
             return elements;
+        }
+        case 'LenCall': {
+            const target = evalExpr(node.target, env);
+            if (typeof target === 'string' || Array.isArray(target)) {
+                return target.length;
+            } else {
+                throw new TypeError('len() argument must be a string or array');
+            }
         }
         case 'Unary': {
             const v = evalExpr(node.arg, env);

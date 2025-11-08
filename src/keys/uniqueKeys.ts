@@ -13,5 +13,7 @@ export const KEYWORDS = new Set([
     "class",
     "require",
     "break",
-    "continue"
+    "continue",
+    "len",
+    "for"
 ]);

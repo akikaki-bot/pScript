@@ -16,7 +16,7 @@ export function createGlobalEnv(): Environment {
 	)());
 	env.define('Thread', (() => {
 		return Thread;
-	})())	
+	})());
 	env.define('fetch', (
 		function () { 
 			return fetch; 
@@ -38,7 +38,7 @@ export function createGlobalEnv(): Environment {
 			return void 0; 
 		}
 	);
-	env.define('log', 
+	env.define('log',  // deprecated, use print()
 		(...a: any[]) => { 
 			console.log(...a); 
 		}
@@ -47,8 +47,8 @@ export function createGlobalEnv(): Environment {
 }
 
 /**
- * Compile and run the given source code in the provided environment.
- * @param src {string} The source code to run.
+ * Compile and run the given PScript code in the provided environment.
+ * @param src {string} The PScript code to run.
  * @param env {Environment} The environment to run the code in.
  * @returns {any} The result of the program execution.
  */
@@ -56,7 +56,6 @@ export function run(src: string, env?: Environment) {
 	const tokens = lex(src);
 	const p = new Parser(tokens);
 	const prog = p.parseProgram();
-	console.log( JSON.stringify( prog, null, 2 ) );
 	return evalProgram(prog, env || createGlobalEnv());
 }
 

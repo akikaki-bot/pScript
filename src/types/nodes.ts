@@ -18,6 +18,7 @@ export type StmtNode =
     | { type: 'ArrayStmt', elements: ExprNode[] }
     | { type: 'BreakStmt' }
     | { type: 'ContinueStmt' }
+    | { type: 'LenStmt', target: ExprNode }
     
 export type ExprNode =
     | { type: 'NumberLiteral', value: number }
@@ -31,4 +32,5 @@ export type ExprNode =
     | { type: 'FunctionExpr', params: string[], body: StmtNode[] }
     | { type: 'RequireExpr', requirePath: ExprNode }
     | { type: 'ClassCall', name: string, params: ExprNode[], isConstructed: boolean }
-    | { type: 'ArrayExpr', elements: ExprNode[] };
+    | { type: 'ArrayExpr', elements: ExprNode[] }
+    | { type: 'LenCall', target: ExprNode }
