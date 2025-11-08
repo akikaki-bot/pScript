@@ -134,9 +134,13 @@ function evalStmt(node: StmtNode, env: Environment): any {
         }
         case 'WhileStmt': {
             while (isTruthy(evalExpr(node.test, env))) {
-                const res = evalStmt(node.body, env);
-                if (res instanceof BreakException) break;
-                if (res instanceof ContinueException) continue;
+                try {
+                    evalStmt(node.body, env);
+                } catch (e) {
+                    if (e instanceof BreakException) break;
+                    if (e instanceof ContinueException) continue;
+                    throw e;
+                }
             }
             return undefined;
         }
@@ -149,6 +153,12 @@ function evalStmt(node: StmtNode, env: Environment): any {
             const v = node.arg ? evalExpr(node.arg, env) : undefined;
             throw new ReturnException(v);
         }
+        case 'BreakStmt': {
+            throw new BreakException();
+        }
+        case 'ContinueStmt': {
+            throw new ContinueException();
+        }
         case 'ClassStmt': {
             const classConstructor = env.get(node.name);
             if (typeof classConstructor !== 'function') {
@@ -159,12 +169,6 @@ function evalStmt(node: StmtNode, env: Environment): any {
             if (node.name && !node.isConstructed) env.define(node.name, new classConstructor(...args));
             node.isConstructed = true;
             return new classConstructor(...args);
-        }
-        case 'BreakStmt': {
-            return new BreakException();
-        }
-        case 'ContinueStmt': {
-            return new ContinueException();
         }
     }
 }

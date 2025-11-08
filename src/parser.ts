@@ -111,7 +111,7 @@ export function lex(input: string): Token[] {
         }
         // two-char operators
         const two = input.slice(i, i + 2);
-        const twoOps = new Set(['==', '!=', '<=', '>=', '&&', '||', 'or', 'is']);
+        const twoOps = new Set(['==', '!=', '<=', '>=', '&&', '||', 'or']);
         if (twoOps.has(two)) {
             tokens.push({
                 type: TokenType.Op,

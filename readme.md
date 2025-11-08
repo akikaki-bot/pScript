@@ -38,6 +38,26 @@ while( i < 100 ){
 }
 ```
 
+## Example: Calculate prime 1 to 1000
+```
+fn isPrime( n ){
+    if( n == 1 ) return false;
+    let i = 2;
+    while( i < n ){
+        if( n % i == 0 ) return false
+        i = i + 1
+    }
+    return true
+}
+
+let j = 0;
+while( j < 1000 ){
+    j = j + 1 
+    let prime = isPrime( j );
+    if( prime ) print(j)
+}
+```
+
 ## If statements keywords
 ```
 if( a != b ) {}

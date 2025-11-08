@@ -1,6 +1,17 @@
-let i = 0;
-while( i < 4 ){
-    i = i + 1
-    if( i % 2 == 0 ) break;
+fn isPrime( n ){
+    if( n == 1 ) return false;
+    let i = 2;
+    while( i < n ){
+        if( n % i == 0 ) return false
+        i = i + 1
+    }
+    return true
 }
-print( i );
+
+let j = 0;
+while( j < 1000 ){
+    j = j + 1 
+    let prime = isPrime( j );
+    if( prime ) print(j)
+}
+
