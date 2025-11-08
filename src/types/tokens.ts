@@ -8,8 +8,20 @@ export enum TokenType {
     EOF = "EOF",
 }
 
-export type Token = {
-    type: TokenType;
-    value: string;
-    pos: number;
+/**
+ * A token produced by the lexer
+ */
+export interface Token {
+    /**
+     * The type of the token
+     */
+    type: TokenType
+    /**
+     * The value of the token
+     */
+    value: string
+    /**
+     * The position of the token in the input string
+     */
+    pos: number
 };

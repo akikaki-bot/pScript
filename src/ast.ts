@@ -7,6 +7,10 @@ import {
     StmtNode 
 } from "./types";
 
+function isKeyword(token: Token, value: string) { 
+    return token.type === TokenType.Keyword && token.value === value; 
+}
+
 /**
  * Parser class to convert tokens into an AST
  * @param tokens {Token[]}
@@ -64,18 +68,19 @@ export class Parser {
 
     parseStatement(): StmtNode {
         const pk = this.peek();
-        if (pk.type === TokenType.Keyword && pk.value === 'let') return this.parseLet_fixed();
-        if (pk.type === TokenType.Keyword && pk.value === 'len') return this.parseLen(); // Utility statement
-        if (pk.type === TokenType.Keyword && pk.value === 'if') return this.parseIf();
-        if (pk.type === TokenType.Keyword && pk.value === 'while') return this.parseWhile();
-        if (pk.type === TokenType.Keyword && pk.value === 'fn') return this.parseFunctionDecl();
+        if (isKeyword(pk, 'let')) return this.parseLet();
+        if (isKeyword(pk, 'return')) return this.parseReturn();
+        if (isKeyword(pk, 'new')) return this.parseClassCreate();
+        if (isKeyword(pk, 'break')) return this.parseBreak();
+        if (isKeyword(pk, 'continue')) return this.parseContinue();
+        if (isKeyword(pk, 'require')) return this.parseRequire();
+        if (isKeyword(pk, 'len')) return this.parseLen(); // Utility statement
+        if (isKeyword(pk, 'if')) return this.parseIf();
+        if (isKeyword(pk, 'while')) return this.parseWhile();
+        if (isKeyword(pk, 'fn')) return this.parseFunctionDecl();
         if (pk.type === TokenType.Op && pk.value === '{') return this.parseBlock();
-        if (pk.type === TokenType.Keyword && pk.value === 'return') return this.parseReturn();
         if (pk.type === TokenType.Op && pk.value === '[') return this.parseArray();
-        if (pk.type === TokenType.Keyword && pk.value === 'new') return this.parseClassCreate();
-        if (pk.type === TokenType.Keyword && pk.value === 'require') return this.parseRequire();
-        if (pk.type === TokenType.Keyword && pk.value === 'break') return this.parseBreak();
-        if (pk.type === TokenType.Keyword && pk.value === 'continue') return this.parseContinue();
+
         const expr = this.parseExpression();
         if (this.peek().type === TokenType.Op && this.peek().value === ';') this.pos++;
         return { type: 'ExprStmt', expr };
@@ -157,10 +162,10 @@ export class Parser {
         if (t.type !== TokenType.Keyword || t.value !== v) throw new Error('Expected keyword ' + v + ' got ' + JSON.stringify(t)); 
     }
 
-    parseLet_fixed(): StmtNode {
+    parseLet(): StmtNode {
         this.expectKeyword('let');
         const id = this.eatId(); 
-        if (!id) throw new ParseError('Expected identifier after let');
+        if (!id) throw new TypeError('Expected identifier after let');
         let init: ExprNode | undefined = undefined;
         if (this.peek().type === TokenType.Op && this.peek().value === '=') { 
             this.pos++; 
@@ -379,7 +384,8 @@ export class Parser {
         }
         if (t.type === TokenType.String) { 
             this.pos++; 
-            return { type: 'StringLiteral', value: t.value }; }
+            return { type: 'StringLiteral', value: t.value }; 
+        }
         if (t.type === TokenType.Keyword && (t.value === 'true' || t.value === 'false')) { 
             this.pos++; 
             return { 
@@ -407,9 +413,6 @@ export class Parser {
                 type: "ArrayExpr",
                 elements: elements
             }
-        }
-        if (t.type === TokenType.Op && t.value === 'function') {
-            // function expression: function (a,b) { ... }
         }
         if (t.type === TokenType.Keyword && t.value === 'require') {
             this.pos++;
@@ -465,5 +468,3 @@ export class Parser {
         throw new TypeError(`Unexpected token in primary: ${t.value} \n detail: ${JSON.stringify(t)}`);
     }
 }
-
-// ----------------------------- Runtime / Interpreter -----------------------------
