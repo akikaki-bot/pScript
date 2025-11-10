@@ -1,4 +1,5 @@
 import { ParseError, TypeError } from "./errors";
+import { KEYWORDS } from "./keys";
 import { 
     Token, 
     TokenType, 
@@ -47,6 +48,9 @@ export class Parser {
     }
     eatId() { 
         const t = this.peek(); 
+        if( t.type === TokenType.Keyword && KEYWORDS.has(t.value) ) {
+            throw new TypeError('Unexpected keyword ' + t.value + ' where identifier expected');
+        }
         if (t.type === TokenType.Identifier) { 
             this.pos++; 
             return t.value; 
@@ -370,6 +374,12 @@ export class Parser {
                 }
                 this.expectOp(')');
                 node = { type: 'Call', callee: node, args };
+                continue;
+            }
+            // member access like obj.prop or expr.prop where dot may have been tokenized as part of the identifier (e.g. ".then")
+            if (this.peek().type === TokenType.Identifier && this.peek().value.startsWith('.')) {
+                const prop = this.next().value.slice(1);
+                node = { type: 'MemberExpr', object: node, property: prop } as any;
                 continue;
             }
             break;

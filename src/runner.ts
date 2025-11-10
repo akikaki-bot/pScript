@@ -293,6 +293,14 @@ function evalExpr(node: ExprNode, env: Environment): any {
         case 'Call': {
             const args = node.args.map(a => evalExpr(a, env));
 
+            if (node.callee.type === 'MemberExpr') {
+                const cal = node.callee;
+                const receiver = evalExpr(cal.object, env);
+                const fn = receiver ? receiver[cal.property] : undefined;
+                if (!isFunction(fn)) throw new FunctionCantCallError('Call of non-function');
+                return (fn as Function).call(receiver, ...args);
+            }
+
             if (node.callee.type === 'Identifier' && node.callee.name.includes('.')) {
                 const parts = node.callee.name.split('.');
                 let receiver: any = env.get(parts[0]);
@@ -306,7 +314,6 @@ function evalExpr(node: ExprNode, env: Environment): any {
                 return (fn as Function).call(receiver, ...args);
             }
 
-            // default: evaluate callee and call with no receiver
             const callee = evalExpr(node.callee, env);
             if (!isFunction(callee)) throw new FunctionCantCallError('Call of non-function');
             return (callee as Function).call(null, ...args);

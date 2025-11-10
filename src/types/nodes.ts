@@ -29,6 +29,7 @@ export type ExprNode =
     | { type: 'Unary', op: string, arg: ExprNode }
     | { type: 'Assign', left: ExprNode, right: ExprNode }
     | { type: 'Call', callee: ExprNode, args: ExprNode[] }
+    | { type: 'MemberExpr', object: ExprNode, property: string }
     | { type: 'FunctionExpr', params: string[], body: StmtNode[] }
     | { type: 'RequireExpr', requirePath: ExprNode }
     | { type: 'ClassCall', name: string, params: ExprNode[], isConstructed: boolean }

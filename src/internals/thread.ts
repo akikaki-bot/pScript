@@ -1,40 +1,95 @@
+type ThreadHandle = {
+    join: (cb?: (err: any, res?: any) => void) => Promise<any>;
+    cancel: () => void;
+};
+
 
 /**
- * そのうち独自クラスの処理にする。
- * 現状Promiseのラッパー
+ * Minimal cooperative async helper
+ * - Thread.spawn(fn, callback?) 
+ * => returns a handle { join(cb?), cancel() }
+ * - Thread.sleep(ms) 
+ * => Promise that resolves after ms (for advanced users)
+ * - Thread.yield() 
+ * => Promise resolved on next tick
+ * 
+ * @example
+ * new Thread(fnOrValue).thread(...args)
+ * // runs fn in thread, returns Promise
+ * new Thread(value).await(cb)
+ * // calls cb with value on next tick
  */
-export class Thread implements Promise<any> {
-    [Symbol.toStringTag]: string = "Thread";
+export class Thread {
+    
+    private _value?: Promise<any>;
+    private fnc?: Function;
 
-    constructor(
-        public executor: (
-            resolve: (value: any) => void, 
-            reject: (reason?: any) => void
-        ) => void
-    ) {}
-
-    then<TResult1 = any, TResult2 = never>(
-        onfulfilled?: ((value: any) => TResult1 | PromiseLike<TResult1>) | undefined | null, 
-        onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null
-    ): Promise<TResult1 | TResult2> {
-        return new Promise(this.executor).then(onfulfilled, onrejected);
+    constructor( threadValue ?: any ) {
+        if (typeof threadValue === 'function') {
+            this.fnc = threadValue;
+        } else if (threadValue !== undefined) {
+            this._value = Promise.resolve(threadValue);
+        }
     }
 
-    catch<TResult = never>(
-        onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null
-    ): Promise<any | TResult> {
-        return new Promise(this.executor).catch(onrejected);
+    static spawn(fn: Function, cb?: (err: any, res?: any) => void): ThreadHandle {
+        if (typeof fn !== 'function') throw new TypeError('Thread.spawn requires a function');
+        let cancelled = false;
+
+        const p = new Promise<any>((resolve, reject) => {
+            Promise.resolve().then(() => {
+                if (cancelled) return reject(new Error('Cancelled'));
+                try {
+                    const res = fn();
+                    resolve(res);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+
+        p.then((res) => {
+            if (cb) cb(null, res);
+        }).catch((err) => {
+            if (cb) cb(err);
+        });
+
+        return {
+            join(cb2?: (err: any, res?: any) => void) {
+                if (cb2) {
+                    p.then((r) => cb2(null, r))
+                     .catch((e) => cb2(e));
+                }
+                return p;
+            },
+            cancel() {
+                cancelled = true;
+            }
+        };
     }
 
-    finally(onfinally?: (() => void) | undefined | null): Promise<any> {
-        return new Promise(this.executor).finally(onfinally);
+    static sleep(ms: number) {
+        return new Promise((res) => setTimeout(res, ms));
     }
 
-    static resolve(value: any): Thread {
-        return new Thread((resolve) => resolve(value));
+    static yield() {
+        return Promise.resolve();
     }
 
-    static reject(reason?: any): Thread {
-        return new Thread((_, reject) => reject(reason));
+    thread(...args: any[]) {
+        if (typeof this.fnc === 'function') return Thread.spawn(this.fnc).join();
+        return this._value ? this._value : Promise.resolve(undefined);
+    }
+
+    await(cb: (err: any, res?: any) => void) {
+        if (typeof this.fnc === 'function') {
+            Thread.spawn(this.fnc).join(cb);
+            return;
+        }
+        if (this._value) {
+            this._value.then((r) => cb(null, r)).catch((e) => cb(e));
+            return;
+        }
+        cb(null, undefined);
     }
 }
